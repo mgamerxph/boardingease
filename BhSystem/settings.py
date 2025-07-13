@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import logging
 import sys
+import dj_database_url
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -31,7 +32,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fallback-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['boardingease.onrender.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(',')
 # Application definition
 
 INSTALLED_APPS = [
@@ -80,14 +81,7 @@ WSGI_APPLICATION = 'BhSystem.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'boardingease_db'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
-    }
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 
