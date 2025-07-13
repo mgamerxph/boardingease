@@ -285,7 +285,7 @@ def login_view(request):
                     return redirect('owner_dashboard')
                 else:
                     # Not approved
-                    return render(request, 'registration_pending.html')
+                    return render(request, 'pendingwait.html')
             else:
                 # Not an owner
                 login(request, user)
