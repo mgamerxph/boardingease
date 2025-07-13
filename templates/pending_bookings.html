@@ -1,0 +1,131 @@
+{% extends "ownerpage.html" %}
+{% load static %}
+
+{% block title %}Pending Booking Requests | BoardingEase{% endblock %}
+
+{% block content %}
+<style>
+    .card-custom {
+        border-radius: 1rem;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .card-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+    }
+    .btn-outline-approve {
+        color: #198754;
+        border-color: #198754;
+    }
+    .btn-outline-approve:hover {
+        background-color: #198754;
+        color: #fff;
+    }
+    .btn-outline-reject {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+    .btn-outline-reject:hover {
+        background-color: #dc3545;
+        color: #fff;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h3 class="fw-bold text-dark mb-0">
+            <i class="fas fa-clock text-primary me-2"></i>Pending Booking Requests
+        </h3>
+
+        <form method="get" class="d-flex align-items-center flex-wrap gap-2">
+            <label class="fw-semibold text-muted mb-0">Filter by Room:</label>
+            <select name="boardinghouse" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="">All</option>
+                {% for bh in boardinghouses %}
+                    <option value="{{ bh.id }}" {% if selected_bh == bh.id|stringformat:"s" %}selected{% endif %}>{{ bh.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="fw-semibold text-muted mb-0 ms-3">Sort by:</label>
+            <select name="order" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="oldest" {% if current_order == "oldest" %}selected{% endif %}>Oldest to Newest</option>
+                <option value="newest" {% if current_order == "newest" %}selected{% endif %}>Newest to Oldest</option>
+            </select>
+        </form>
+    </div>
+
+    {% if pending_bookings.object_list %}
+        <div class="row g-4">
+            {% for booking in pending_bookings %}
+            <div class="col-md-6">
+                <div class="card card-custom shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-user text-secondary me-2"></i>{{ booking.name }}
+                            </h5>
+                            <span class="badge bg-light text-dark border shadow-sm">
+                                <i class="fas fa-calendar-alt me-1 text-muted"></i>
+                                {{ booking.created_at|date:"M j, Y - g:i A" }}
+                            </span>
+                        </div>
+                        <p class="mb-2">
+                            <i class="fas fa-building text-info me-2"></i>
+                            <span class="badge bg-primary-subtle text-primary fw-medium px-2 rounded-pill">{{ booking.boardinghouse.name }}</span>
+                        </p>
+                        <p class="mb-1"><i class="fas fa-phone-alt text-success me-2"></i>{{ booking.contact_number }}</p>
+                        <p class="mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>{{ booking.address }}</p>
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                        <a href="{% url 'approve_booking' booking.id %}" 
+                           class="btn btn-outline-approve btn-sm"
+                           onclick="return confirm('{% if booking.has_other_pending %}Approve and reject all other pending requests for this boarding house?{% else %}Approve this booking?{% endif %}')">
+                            <i class="fas fa-check-circle me-1"></i>Approve
+                        </a>
+                        <a href="{% url 'reject_booking' booking.id %}" 
+                           class="btn btn-outline-reject btn-sm"
+                           onclick="return confirm('Reject this booking request?')">
+                            <i class="fas fa-times-circle me-1"></i>Reject
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-5">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pending_bookings.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ pending_bookings.previous_page_number }}&order={{ current_order }}&boardinghouse={{ selected_bh }}">«</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">«</span></li>
+                    {% endif %}
+
+                    {% for num in pending_bookings.paginator.page_range %}
+                        <li class="page-item {% if pending_bookings.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}&order={{ current_order }}&boardinghouse={{ selected_bh }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+
+                    {% if pending_bookings.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ pending_bookings.next_page_number }}&order={{ current_order }}&boardinghouse={{ selected_bh }}">»</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">»</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center shadow-sm py-4">
+            <i class="fas fa-info-circle fa-2x mb-2 text-primary"></i><br>
+            <strong>No pending booking requests found.</strong>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

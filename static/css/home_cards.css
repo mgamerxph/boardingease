@@ -1,0 +1,51 @@
+body{
+  background: #f8f8f8;
+}
+
+.bh-card {
+        border-radius: 16px;
+        overflow: hidden;
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+        position: relative;
+    }
+
+    .bh-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .bh-img-container {
+        position: relative;
+    }
+
+    .bh-img {
+        height: 200px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .bh-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .truncate-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: block;
+    }
+
+    .btn-sm {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }

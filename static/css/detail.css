@@ -1,0 +1,37 @@
+.detail-card {
+    max-width: 800px;
+    margin: auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+}
+
+.detail-card img {
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+h2 {
+    font-weight: 700;
+    color: #212529;
+}
+
+p {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.btn-darkcustom {
+    background-color: #2c2f33;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+}
+
+.btn-darkcustom:hover {
+    background-color: #23272a;
+    color: #fff;
+}
