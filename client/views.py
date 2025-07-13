@@ -271,6 +271,7 @@ def boardinghouse_detail(request, pk):
         'booking_status': booking_status,
     })
  
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -278,10 +279,20 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
-            return redirect('owner_dashboard') if user.profile.is_owner else redirect('home')
+            if user.profile.is_owner:
+                if user.profile.is_approved:
+                    login(request, user)
+                    return redirect('owner_dashboard')
+                else:
+                    # Not approved
+                    return render(request, 'registration_pending.html')
+            else:
+                # Not an owner
+                login(request, user)
+                return redirect('home')
         else:
             messages.error(request, 'Invalid username or password.')
+    
     return render(request, 'login.html')
 
 def logout_view(request):
