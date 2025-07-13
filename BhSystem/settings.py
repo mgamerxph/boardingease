@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import logging
+import sys
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -140,4 +142,17 @@ LOGIN_URL = '/login/'  # or wherever your login page is
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 365 * 100
 
- 
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console':{
+            'class':'logging.StreamHandler',
+            'stream': sys.stdout,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
