@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Profile, BoardingHouse
 from django.core.mail import send_mail
+from django.utils.html import format_html
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
@@ -23,22 +24,31 @@ class ProfileAdmin(admin.ModelAdmin):
         'contact_number',
     )
     list_editable = ('is_approved',)
+    readonly_fields = ('business_permit_preview',)
+
     fieldsets = (
         (None, {
             'fields': (
                 'user',
                 'first_name',
                 'last_name',
-                'address',
-                'contact_number',
                 'email',
-                'business_permit',  # 🆕 Image field for permit
+                'contact_number',
+                'address',
+                'business_permit',
+                'business_permit_preview',  # 👁️ image preview
             )
         }),
         ('Permissions', {
             'fields': ('is_owner', 'is_approved')
         }),
     )
+
+    def business_permit_preview(self, obj):
+        if obj.business_permit:
+            return format_html('<img src="{}" style="max-height: 200px;" />', obj.business_permit.url)
+        return "No permit uploaded"
+    business_permit_preview.short_description = 'Business Permit Preview'
 
     def save_model(self, request, obj, form, change):
         if change:
