@@ -12,6 +12,7 @@ class ProfileAdmin(admin.ModelAdmin):
         'contact_number',
         'email',
         'address',
+        'business_permit',
         'is_owner',
         'is_approved',
     )
