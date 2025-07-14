@@ -14,7 +14,6 @@ from pathlib import Path
 import os
 import logging
 import sys
-import dj_database_url
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,9 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fallback-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(',')
+ALLOWED_HOSTS = ['https://mgamerxph.pythonanywhere.com']
 # Application definition
 
 INSTALLED_APPS = [
@@ -81,7 +80,13 @@ WSGI_APPLICATION = 'BhSystem.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mgamerxph$boardingease_db',
+        'USER': 'mgamerxph',
+        'PASSWORD': 'A09704482013',
+        'HOST': 'mgamerxph.mysql.pythonanywhere-services.com',
+    }
 }
 
 
@@ -154,3 +159,13 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'mgamerxph@gmail.com'          # 🔁 Replace with your Gmail address
+EMAIL_HOST_PASSWORD = 'zcof nrek qrdi ykkv'         # 🔁 Replace with your 16-character Gmail app password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

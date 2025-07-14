@@ -13,6 +13,8 @@ class OwnerRegistrationForm(forms.ModelForm):
     last_name = forms.CharField(max_length=30)
     contact_number = forms.CharField(max_length=15)
     address = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}))
+    email = forms.EmailField()
+    business_permit = forms.ImageField(required=False)  # ✅ New image field
     password = forms.CharField(widget=forms.PasswordInput)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
 
@@ -33,13 +35,18 @@ class OwnerRegistrationForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password"])
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
+        user.email = self.cleaned_data["email"]  # ✅ Save email to user
+
         if commit:
             user.save()
             profile = user.profile
             profile.is_owner = True
             profile.contact_number = self.cleaned_data["contact_number"]
             profile.address = self.cleaned_data["address"]
+            profile.email = self.cleaned_data["email"]  # ✅ Save to profile too
+            profile.business_permit = self.cleaned_data.get("business_permit")  # ✅ Save image
             profile.save()
+
         return user
 
 class BookingForm(forms.ModelForm):

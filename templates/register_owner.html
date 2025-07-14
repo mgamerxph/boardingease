@@ -8,7 +8,7 @@
 {% load form_filters %}
 <div class="container mt-5">
     <h2>Register as Boarding House Owner</h2>
-    <form method="post">
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="mb-3">
@@ -39,6 +39,11 @@
         <div class="mb-3">
             <label for="id_address" class="form-label">Address</label>
             {{ form.address|add_class:"form-control" }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_business_permit" class="form-label">Upload Business Permit</label>
+            {{ form.business_permit|add_class:"form-control" }}
         </div>
 
         <div class="mb-3">
