@@ -12,7 +12,7 @@ class ProfileAdmin(admin.ModelAdmin):
         'contact_number',
         'email',
         'address',
-        'business_permit',
+        'business_permit_preview',  # 👁 show thumbnail instead of just path
         'is_owner',
         'is_approved',
     )
@@ -37,7 +37,7 @@ class ProfileAdmin(admin.ModelAdmin):
                 'contact_number',
                 'address',
                 'business_permit',
-                'business_permit_preview',  # 👁️ image preview
+                'business_permit_preview',
             )
         }),
         ('Permissions', {
@@ -47,9 +47,13 @@ class ProfileAdmin(admin.ModelAdmin):
 
     def business_permit_preview(self, obj):
         if obj.business_permit:
-            return format_html('<img src="{}" style="max-height: 200px;" />', obj.business_permit.url)
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" style="max-height: 100px;"/></a>',
+                obj.business_permit.url,  # link to full image
+                obj.business_permit.url   # thumbnail preview
+            )
         return "No permit uploaded"
-    business_permit_preview.short_description = 'Business Permit Preview'
+    business_permit_preview.short_description = "Business Permit"
 
     def save_model(self, request, obj, form, change):
         if change:
@@ -62,7 +66,7 @@ Hi {obj.first_name} {obj.last_name},
 Your account on BoardingEase has been approved by the administrator.
 You can now log in and start managing your boarding house.
 
-Login here: https://mgamerxph.pythonanywhere.com/login
+Login here: http://127.0.0.1:8000//login
 
 Thank you,
 BoardingEase Team

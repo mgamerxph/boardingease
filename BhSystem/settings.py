@@ -31,7 +31,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fallback-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['https://mgamerxph.pythonanywhere.com']
+ALLOWED_HOSTS = ['mgamerxph.pythonanywhere.com', '127.0.0.1', 'localhost']
 # Application definition
 
 INSTALLED_APPS = [
@@ -79,15 +79,37 @@ WSGI_APPLICATION = 'BhSystem.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'mgamerxph$boardingease_db',
+#         'USER': 'mgamerxph',
+#         'PASSWORD': 'A09704482013',
+#         'HOST': 'mgamerxph.mysql.pythonanywhere-services.com',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mgamerxph$boardingease_db',
-        'USER': 'mgamerxph',
-        'PASSWORD': 'A09704482013',
-        'HOST': 'mgamerxph.mysql.pythonanywhere-services.com',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',   # still use mysql backend
+#         'NAME': 'boardingease_db',           # create this DB in MariaDB first
+#         'USER': 'root',
+#         'PASSWORD': 'root1',                         # empty if you didn’t set one
+#         'HOST': '127.0.0.1',                    # or 'localhost'
+#         'PORT': '3307',                         # notice your MariaDB runs on 3307
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',               # ensures full Unicode (emoji, etc.)
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         },
+#     }
+# }
 
 
 # Password validation
@@ -169,3 +191,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mgamerxph@gmail.com'          # 🔁 Replace with your Gmail address
 EMAIL_HOST_PASSWORD = 'zcof nrek qrdi ykkv'         # 🔁 Replace with your 16-character Gmail app password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# settings.py
+GOOGLE_MAPS_API_KEY = "AIzaSyBVE8xZQR7BVzNl7cBRj3o5ORUo9TA4ADs"
+

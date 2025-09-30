@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from .models import BoardingHouse  # import your model
 from django.contrib.auth.decorators import login_required
-from .models import BoardingHouse, Profile, Booking  # ✅ Add Profile here
-from .forms import BoardingHouseForm  # ✅ import your form
+from .models import BoardingHouse, Profile, Booking # ✅ Add Profile here
+from .forms import BoardingHouseForm # ✅ import your form
 from django.contrib.auth.models import User
 from .forms import OwnerRegistrationForm, BookingForm
 from django.contrib.auth import login
@@ -13,26 +13,56 @@ from django.contrib.auth import logout
 from django.db.models import Q, Count
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.core.mail import send_mail
 
 def home(request):
-    query = request.GET.get('q')  # Get search input
+    query = request.GET.get('q', '')  # Search input
+    bedspacer = request.GET.get('bedspacer', '')
+    gender = request.GET.get('gender', '')
+
+    selected_amenities = request.GET.get('amenities', '')
+    selected_inclusions = request.GET.get('inclusions', '')
+    selected_house_rules = request.GET.get('house_rules', '')
+
     booked_bhs = request.session.get('booked_boardinghouses', [])
 
-    # ✅ Filter by address if search query exists
+    # Start with all boarding houses
+    boardinghouses = BoardingHouse.objects.all()
+
+    # 🔍 Filter by search query (address)
     if query:
-        boardinghouses = BoardingHouse.objects.filter(address__icontains=query)
-    else:
-        boardinghouses = BoardingHouse.objects.all()
+        boardinghouses = boardinghouses.filter(address__icontains=query)
 
+    # 🛏 Filter by bedspacer
+    if bedspacer == 'yes':
+        boardinghouses = boardinghouses.filter(is_bedspacer=True)
+    elif bedspacer == 'no':
+        boardinghouses = boardinghouses.filter(is_bedspacer=False)
+
+    # 🚻 Filter by gender
+    if gender == 'male':
+        boardinghouses = boardinghouses.filter(gender='male')
+    elif gender == 'female':
+        boardinghouses = boardinghouses.filter(gender='female')
+
+    # 🏷 Filter by amenities
+    if selected_amenities:
+        boardinghouses = boardinghouses.filter(amenities__contains=selected_amenities)
+
+    # 💡 Filter by inclusions
+    if selected_inclusions:
+        boardinghouses = boardinghouses.filter(inclusions__contains=selected_inclusions)
+
+    # 📜 Filter by house rules
+    if selected_house_rules:
+        boardinghouses = boardinghouses.filter(house_rules__contains=selected_house_rules)
+
+    # ✅ Add booking flags for each boarding house
     for bh in boardinghouses:
-        latest_booking = Booking.objects.filter(
-            boardinghouse=bh
-        ).order_by('-id').first()
-
-        # ✅ Status logic: booked = approved
+        latest_booking = Booking.objects.filter(boardinghouse=bh).order_by('-id').first()
         bh.is_booked = latest_booking.status == 'approved' if latest_booking else False
 
-        # ✅ Session-based pending flag logic
+        # Session-based pending flag
         if str(bh.id) in booked_bhs:
             pending_booking = Booking.objects.filter(
                 boardinghouse=bh,
@@ -45,11 +75,22 @@ def home(request):
             bh.is_pending_for_this_user = False
             bh.pending_booking_id = None
 
-    # ✅ Send both results and query back to template
-    return render(request, 'home.html', {
+    # Send everything to template
+    context = {
         'boardinghouses': boardinghouses,
-        'query': query,  # needed to retain input value in form
-    })
+        'query': query,
+        'bedspacer': bedspacer,
+        'gender': gender,
+        'selected_amenities': selected_amenities,
+        'selected_inclusions': selected_inclusions,
+        'selected_house_rules': selected_house_rules,
+        'amenities_choices': BoardingHouse.AMENITIES_CHOICES,
+        'inclusion_choices': BoardingHouse.INCLUSION_CHOICES,
+        'house_rule_choices': BoardingHouse.HOUSE_RULE_CHOICES,
+    }
+
+    return render(request, 'home.html', context)
+
 
 def cancel_booking_guest(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, status='pending')
@@ -148,7 +189,7 @@ def pending_bookings_view(request):
 
     # Filter by specific BH if selected
     if selected_bh:
-        all_pending = all_pending.filter(boardinghouse__id=selected_bh)
+        all_pending = all_pending.filter(room__boardinghouse__id=selected_bh)
 
     # Apply sort order
     if sort_order == 'oldest':
@@ -180,15 +221,17 @@ def add_boardinghouse(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
 
     if not profile.is_owner:
-        return redirect('home')  # only owners can add BHs
+        messages.warning(request, "Only owners can add boarding houses.")
+        return redirect('home')
 
     if request.method == 'POST':
-        # ✅ Add request.FILES to handle image uploads
-        form = BoardingHouseForm(request.POST, request.FILES)   
+        form = BoardingHouseForm(request.POST, request.FILES)
+
         if form.is_valid():
             bh = form.save(commit=False)
-            bh.owner = request.user  # ✅ assign owner
+            bh.owner = request.user
             bh.save()
+
             messages.success(request, "Boarding house added successfully.")
             return redirect('owner_dashboard')
         else:
@@ -196,11 +239,13 @@ def add_boardinghouse(request):
     else:
         form = BoardingHouseForm()
 
-    return render(request, 'add_boardinghouse.html', {'form': form})
+    return render(request, 'add_boardinghouse.html', {
+        'form': form,
+    })
 
 def register_owner(request):
     if request.method == 'POST':
-        form = OwnerRegistrationForm(request.POST)
+        form = OwnerRegistrationForm(request.POST, request.FILES)  # ✅ include request.FILES
         if form.is_valid():
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
@@ -213,6 +258,8 @@ def register_owner(request):
             profile.last_name = form.cleaned_data['last_name']
             profile.address = form.cleaned_data['address']
             profile.contact_number = form.cleaned_data['contact_number']
+            profile.email = form.cleaned_data['email']  # ✅ Save email
+            profile.business_permit = form.cleaned_data.get('business_permit')  # ✅ Save file
             profile.save()
 
             return redirect('registration_pending')
@@ -330,10 +377,14 @@ def manual_booking(request, bh_id):
 def book_boardinghouse(request, pk):
     bh = get_object_or_404(BoardingHouse, pk=pk)
 
-    # ✅ Check if this user/session already booked this BH
+    # Check if user/session already booked this BH
     booked_bhs = request.session.get('booked_boardinghouses', [])
     if str(pk) in booked_bhs:
-        messages.warning(request, "You’ve already booked this boarding house. Please wait for approval.")
+        messages.warning(
+            request,
+            "You’ve already booked this boarding house. Please wait for approval.",
+            extra_tags='booking'
+        )
         return redirect('boardinghouse_detail', pk=pk)
 
     if request.method == 'POST':
@@ -344,14 +395,22 @@ def book_boardinghouse(request, pk):
             booking.status = 'pending'
             booking.save()
 
-            # ✅ Save in session to prevent repeat booking
+            # Save in session to prevent repeat booking
             booked_bhs.append(str(pk))
             request.session['booked_boardinghouses'] = booked_bhs
 
-            messages.success(request, "Boarding house booked successfully. Please wait for approval.")
-            return redirect('home')
+            messages.success(
+                request,
+                "Boarding house booked successfully. Please wait for approval.",
+                extra_tags='booking'
+            )
+            return redirect('boardinghouse_detail', pk=pk)  # redirect back to the boarding house detail page
         else:
-            messages.error(request, "Please correct the errors below.")
+            messages.error(
+                request,
+                "Please correct the errors below.",
+                extra_tags='booking'
+            )
     else:
         form = BookingForm()
 
@@ -363,43 +422,78 @@ def book_boardinghouse(request, pk):
 @login_required
 def approve_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, boardinghouse__owner=request.user)
+    boardinghouse = booking.boardinghouse  # The associated BoardingHouse
 
-    # Approve the selected booking
-    booking.status = 'approved'
+    # Check if boardinghouse is full
+    if boardinghouse.current_bookings >= boardinghouse.capacity:
+        messages.error(request, f"Boarding house {boardinghouse.name} is already full.")
+        return redirect('owner_dashboard')
+
+    # Approve the booking
+    booking.status = "approved"
     booking.save()
 
-    # ✅ Delete all other pending bookings for the same boarding house
-    Booking.objects.filter(
-        boardinghouse=booking.boardinghouse,
-        status='pending'
-    ).exclude(id=booking.id).update(status='rejected')
-    
-    messages.success(request, "Booking approved successfully.")
+    # Reject other pending bookings only if bedspacer is full (optional logic)
+    if boardinghouse.current_bookings >= boardinghouse.capacity:
+        Booking.objects.filter(
+            boardinghouse=boardinghouse,
+            status="pending"
+        ).exclude(id=booking.id).update(status="rejected")
+
+    # Send email notification to booker
+    if booking.email:  # Make sure Booking model has 'email' field
+        visit_date_text = f"\nVisit Date: {booking.visit_date.strftime('%B %d, %Y')}" if booking.visit_date else ""
+        send_mail(
+            subject=f"Booking Approved: {boardinghouse.name}",
+            message=(
+                f"Hi {booking.name},\n\n"
+                f"Your booking for {boardinghouse.name} has been approved!{visit_date_text}\n\n"
+                "Thank you,\nBoardingEase"
+            ),
+            from_email=None,  # Uses DEFAULT_FROM_EMAIL from settings
+            recipient_list=[booking.email],
+        )
+
+    messages.success(request, "Booking approved successfully and booker notified.")
     return redirect('owner_dashboard')
 
 @login_required
 def reject_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, boardinghouse__owner=request.user)
+    boarding_house = booking.boardinghouse
 
-    # ✅ Mark booking as rejected
+    # Mark booking as rejected
     booking.status = 'rejected'
     booking.save()
 
-    # ✅ Remove BH ID from guest session if exists
-    bh_id = str(booking.boardinghouse.id)
+    # Remove BH ID from guest session if exists
+    bh_id = str(boarding_house.id)
     booked_bhs = request.session.get('booked_boardinghouses', [])
     if bh_id in booked_bhs:
         booked_bhs.remove(bh_id)
         request.session['booked_boardinghouses'] = booked_bhs
 
-    # ✅ Check if the boarding house has any other approved bookings
-    boarding_house = booking.boardinghouse
-    has_approved = boarding_house.booking_set.filter(status='approved').exists()
+    # Check if the boarding house has any approved bookings
+    has_approved = boarding_house.bookings.filter(status='approved').exists()
 
-    # ✅ If no approved bookings remain, mark the boarding house as not booked
+    # If no approved bookings remain, mark the boarding house as not booked
     if not has_approved:
         boarding_house.is_booked = False
         boarding_house.save()
 
-    messages.info(request, "Booking rejected.")
+    # Send email notification to booker
+    if booking.email:  # Make sure Booking model has 'email' field
+        visit_date_text = f"\nVisit Date: {booking.visit_date.strftime('%B %d, %Y')}" if getattr(booking, 'visit_date', None) else ""
+        send_mail(
+            subject=f"Booking Rejected: {boarding_house.name}",
+            message=(
+                f"Hi {booking.name},\n\n"
+                f"Unfortunately, your booking for {boarding_house.name} has been rejected.{visit_date_text}\n\n"
+                "Thank you,\nBoardingEase"
+            ),
+            from_email=None,  # Uses DEFAULT_FROM_EMAIL from settings
+            recipient_list=[booking.email],
+        )
+
+    messages.info(request, "Booking rejected and booker notified.")
     return redirect('owner_dashboard')
