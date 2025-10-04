@@ -1,0 +1,77 @@
+{% if boardinghouses %}
+<div class="row g-4">
+    {% for bh in boardinghouses %}
+        {# HIDE conditions #}
+        {% if not bh.is_bedspacer and bh.is_booked %}
+            {# Regular room approved → skip rendering #}
+        {% elif bh.is_bedspacer and bh.is_approved_for_this_user %}
+            {# Bedspacer approved for this tenant → skip rendering #}
+        {% else %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card bh-card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="position-relative">
+                    {% if bh.image %}
+                        <img src="{{ bh.image.url }}" alt="{{ bh.name }}" class="bh-img card-img-top">
+                    {% else %}
+                        <img src="https://via.placeholder.com/300x200?text=No+Image" class="bh-img card-img-top" alt="No Image">
+                    {% endif %}
+
+                    {% if bh.is_pending_for_this_user %}
+                        <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2 px-3 py-2 rounded-pill shadow">
+                            Pending
+                        </span>
+                    {% else %}
+                        <span class="badge bg-success position-absolute top-0 end-0 m-2 px-3 py-2 rounded-pill shadow">
+                            Room Available
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title text-primary fw-bold mb-1">{{ bh.name }}</h5>
+                    <p class="small text-muted mb-3">
+                        <i class="fas fa-map-marker-alt me-1 text-danger"></i> {{ bh.address }}
+                    </p>
+
+                    <div class="mb-3">
+                        {% if bh.is_bedspacer %}
+                            <span class="badge bg-info text-dark mb-1">Bed Spacer</span><br>
+                            <small class="text-muted">
+                                Occupied: {{ bh.current_bookings }}/{{ bh.capacity }}
+                                (<span class="text-success fw-semibold">{{ bh.available_slots }}</span> left)
+                            </small>
+                        {% else %}
+                            <span class="badge bg-secondary mb-1">Regular Room</span><br>
+                            <small class="text-success fw-semibold">Available</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-auto">
+                        {% if bh.is_pending_for_this_user %}
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'edit_booking' bh.pending_booking_id %}" class="btn btn-outline-primary btn-sm w-50 rounded-pill">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </a>
+                                <a href="{% url 'cancel_booking_guest' bh.pending_booking_id %}" class="btn btn-outline-danger btn-sm w-50 rounded-pill">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="mt-auto">
+                                <a href="{% url 'boardinghouse_detail' bh.pk %}" class="btn btn-primary w-100 rounded-pill shadow-sm">
+                                    <i class="fas fa-door-open me-1"></i> View Details
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info text-center mt-4 shadow-sm rounded-pill">
+    No boarding houses available at the moment.
+</div>
+{% endif %}

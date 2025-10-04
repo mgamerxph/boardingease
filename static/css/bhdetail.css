@@ -1,0 +1,221 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, .navbar-brand {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+  }
+
+.navbar {
+    padding: 0.8rem 1rem;
+  }
+
+.navbar-brand {
+    font-size: 1.3rem;
+}
+
+/* =========================
+   Layout Fix (Equal Columns)
+========================= */
+.row.equal-cols {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;   /* ✅ equal height for both columns */
+}
+.row.equal-cols > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   Section Cards
+========================= */
+.section-card {
+    background: linear-gradient(135deg, #f8f9fa, #eef3f9);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+    flex: 1; /* ✅ makes each card stretch evenly inside col */
+}
+.section-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Titles */
+.room-title {
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+}
+
+/* Section Title */
+.section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #084298;
+    border-bottom: 2px solid #0d6efd;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+/* =========================
+   Room Image
+========================= */
+.room-img {
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    width: 100%;
+}
+
+/* =========================
+   Icons
+========================= */
+.owner-info i,
+.check-list i {
+    color: #0d6efd;
+    margin-right: 6px;
+}
+
+/* Icon Badge */
+.icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e9f1ff;
+    color: #0d6efd;
+    margin-right: 10px;
+    font-size: 0.85rem;
+}
+
+/* =========================
+   Lists
+========================= */
+.check-list li {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+/* Owner Info Paragraphs */
+.owner-info p {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+/* =========================
+   Buttons
+========================= */
+.btn-book,
+.btn-darkcustom {
+    font-weight: 600;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.btn-book {
+    background: #0d6efd;
+    color: #fff;
+}
+.btn-book:hover {
+    background: #084298;
+}
+
+/* =========================
+   Booking Card
+========================= */
+.booking-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;   /* ✅ now uses full col width */
+    flex: 1;       /* ✅ stretch with column height */
+}
+.booking-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Booking Title */
+.booking-card h5 {
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.3rem;
+    color: #212529;
+}
+.text-gradient {
+    background: linear-gradient(90deg, #0d6efd, #6610f2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* =========================
+   Form
+========================= */
+.booking-card .form-label {
+    font-size: 0.8rem;   /* slightly smaller labels */
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.booking-card input,
+.booking-card select,
+.booking-card textarea {
+    border-radius: 8px;          /* slightly smaller corners */
+    padding: 8px 12px;           /* ✅ reduced height */
+    border: 1px solid #ced4da;
+    font-size: 0.85rem;          /* ✅ smaller font */
+    transition: all 0.3s ease;
+}
+
+.booking-card input:focus,
+.booking-card select:focus,
+.booking-card textarea:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.2);
+}
+
+/* Input Group (calendar icon) */
+.input-group-text {
+    border-radius: 0 8px 8px 0;
+    background: #f1f3f5;
+    border-left: 0;
+    color: #0d6efd;
+    font-weight: bold;
+    font-size: 0.85rem;          /* ✅ smaller icon box */
+    padding: 8px 10px;           /* ✅ reduced size */
+}
+
+/* =========================
+   Booking Button
+========================= */
+.btn-darkcustom {
+    background: linear-gradient(135deg, #0d6efd, #084298);
+    border: none;
+    font-size: 0.9rem;        /* ✅ slightly smaller */
+    padding: 10px 0;          /* ✅ less height */
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    color: #fff;
+}
+.btn-darkcustom:hover {
+    background: linear-gradient(135deg, #084298, #061a40);
+    transform: translateY(-2px);
+}

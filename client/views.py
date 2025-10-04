@@ -1,19 +1,18 @@
-from django.shortcuts import render, redirect
-from .models import BoardingHouse  # import your model
-from django.contrib.auth.decorators import login_required
-from .models import BoardingHouse, Profile, Booking # ✅ Add Profile here
-from .forms import BoardingHouseForm # ✅ import your form
-from django.contrib.auth.models import User
-from .forms import OwnerRegistrationForm, BookingForm
-from django.contrib.auth import login
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.db.models import Q, Count
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+
+from .models import BoardingHouse, Profile, Booking
+from .forms import BoardingHouseForm, OwnerRegistrationForm, BookingForm
+
 
 def home(request):
     query = request.GET.get('q', '')  # Search input
@@ -23,8 +22,6 @@ def home(request):
     selected_amenities = request.GET.get('amenities', '')
     selected_inclusions = request.GET.get('inclusions', '')
     selected_house_rules = request.GET.get('house_rules', '')
-
-    booked_bhs = request.session.get('booked_boardinghouses', [])
 
     # Start with all boarding houses
     boardinghouses = BoardingHouse.objects.all()
@@ -57,23 +54,28 @@ def home(request):
     if selected_house_rules:
         boardinghouses = boardinghouses.filter(house_rules__contains=selected_house_rules)
 
-    # ✅ Add booking flags for each boarding house
+    # ✅ Session-based booking tracking (no login required)
+    session_booked = request.session.get("booked_boardinghouses", [])
+
     for bh in boardinghouses:
-        latest_booking = Booking.objects.filter(boardinghouse=bh).order_by('-id').first()
-        bh.is_booked = latest_booking.status == 'approved' if latest_booking else False
+        # check if any approved booking exists (overall "taken" flag)
+        latest_booking = Booking.objects.filter(boardinghouse=bh).order_by("-id").first()
+        bh.is_booked = latest_booking and latest_booking.status == "approved"
 
-        # Session-based pending flag
-        if str(bh.id) in booked_bhs:
-            pending_booking = Booking.objects.filter(
-                boardinghouse=bh,
-                status='pending'
-            ).order_by('-id').first()
+        # default flags
+        bh.is_pending_for_this_user = False
+        bh.pending_booking_id = None
+        bh.is_approved_for_this_user = False
 
-            bh.is_pending_for_this_user = bool(pending_booking)
-            bh.pending_booking_id = pending_booking.id if pending_booking else None
-        else:
-            bh.is_pending_for_this_user = False
-            bh.pending_booking_id = None
+        # check this session’s booking instead of logged-in user
+        if str(bh.id) in session_booked:
+            user_booking = Booking.objects.filter(boardinghouse=bh).order_by("-id").first()
+            if user_booking:
+                if user_booking.status == "pending":
+                    bh.is_pending_for_this_user = True
+                    bh.pending_booking_id = user_booking.id
+                elif user_booking.status == "approved":
+                    bh.is_approved_for_this_user = True
 
     # Send everything to template
     context = {
@@ -90,6 +92,46 @@ def home(request):
     }
 
     return render(request, 'home.html', context)
+
+
+    return render(request, 'home.html', context)
+
+def live_search(request):
+    query = request.GET.get("q", "")
+    bedspacer = request.GET.get("bedspacer", "")
+    amenities = request.GET.get("amenities", "")
+    inclusions = request.GET.get("inclusions", "")
+    house_rules = request.GET.get("house_rules", "")
+
+    boardinghouses = BoardingHouse.objects.all()
+
+    # 🔎 Filter by address
+    if query:
+        boardinghouses = boardinghouses.filter(address__icontains=query)
+
+    # 🛏️ Filter by bedspacer
+    if bedspacer == "yes":
+        boardinghouses = boardinghouses.filter(is_bedspacer=True)
+    elif bedspacer == "no":
+        boardinghouses = boardinghouses.filter(is_bedspacer=False)
+
+    # 🏷️ Optional filters
+    if amenities:
+        boardinghouses = boardinghouses.filter(amenities__icontains=amenities)
+    if inclusions:
+        boardinghouses = boardinghouses.filter(inclusions__icontains=inclusions)
+    if house_rules:
+        boardinghouses = boardinghouses.filter(house_rules__icontains=house_rules)
+
+    # Render partial with request context
+    html = render_to_string(
+        "partials/boardinghouse_list.html",
+        {"boardinghouses": boardinghouses},
+        request=request
+    )
+
+    return JsonResponse({"html": html})
+
 
 
 def cancel_booking_guest(request, booking_id):
@@ -136,11 +178,25 @@ def owner_dashboard(request):
     # Total listings count
     total_listings = boardinghouses.count()
 
+    # Attach extra data per boardinghouse
     for bh in boardinghouses:
-        bh.approved_booking = Booking.objects.filter(
-            boardinghouse=bh,
-            status='approved'
-        ).first()
+        if bh.is_bedspacer:
+            # All approved tenants for bedspacer
+            bh.approved_bookings = Booking.objects.filter(
+                boardinghouse=bh,
+                status='approved'
+            )
+            # Remaining slots
+            bh.remaining_slots = max(0, bh.capacity - bh.current_bookings)
+
+        else:
+            # For regular rooms, only allow one approved booking
+            bh.approved_booking = Booking.objects.filter(
+                boardinghouse=bh,
+                status='approved'
+            ).first()
+
+        # Common: check if pending requests exist
         bh.has_pending = Booking.objects.filter(
             boardinghouse=bh,
             status='pending'
@@ -298,24 +354,64 @@ def boardinghouse_detail(request, pk):
     bh = get_object_or_404(BoardingHouse, pk=pk)
     session_booked = request.session.get('booked_boardinghouses', [])
     bh_id_str = str(bh.id)
-    
+
     user_booking = None
     booking_status = None
 
+    # ✅ Handle booking form submission
+    if request.method == "POST":
+        # Prevent duplicate booking
+        if bh_id_str in session_booked:
+            messages.warning(
+                request,
+                "You’ve already booked this boarding house. Please wait for approval.",
+                extra_tags='booking'
+            )
+            return redirect('boardinghouse_detail', pk=pk)
+
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.boardinghouse = bh
+            booking.status = "pending"
+            # 🔹 No tenant field here since not logged in
+            booking.save()
+
+            # Save in session to prevent repeat booking
+            session_booked.append(bh_id_str)
+            request.session['booked_boardinghouses'] = session_booked
+
+            messages.success(
+                request,
+                "Boarding house booked successfully. Please wait for approval.",
+                extra_tags='booking'
+            )
+            return redirect("home")
+        else:
+            messages.error(
+                request,
+                "Please correct the errors below.",
+                extra_tags='booking'
+            )
+    else:
+        form = BookingForm()
+
+    # ✅ Check existing booking status
     if bh_id_str in session_booked:
-        user_booking = Booking.objects.filter(boardinghouse=bh).order_by('-id').first()
+        user_booking = Booking.objects.filter(boardinghouse=bh).order_by("-id").first()
         if user_booking:
             booking_status = user_booking.status
 
-            # ✅ If booking is rejected or cancelled, remove from session
-            if booking_status in ['rejected', 'cancelled']:
+            # Remove from session if booking was rejected/cancelled
+            if booking_status in ["rejected", "cancelled"]:
                 session_booked.remove(bh_id_str)
-                request.session['booked_boardinghouses'] = session_booked
+                request.session["booked_boardinghouses"] = session_booked
                 booking_status = None
 
-    return render(request, 'boardinghouse_detail.html', {
-        'bh': bh,
-        'booking_status': booking_status,
+    return render(request, "boardinghouse_detail.html", {
+        "bh": bh,
+        "form": form,
+        "booking_status": booking_status,
     })
  
 
@@ -373,51 +469,6 @@ def manual_booking(request, bh_id):
 
         messages.success(request, "Manual booking confirmed successfully.")
         return redirect('owner_dashboard')
-
-def book_boardinghouse(request, pk):
-    bh = get_object_or_404(BoardingHouse, pk=pk)
-
-    # Check if user/session already booked this BH
-    booked_bhs = request.session.get('booked_boardinghouses', [])
-    if str(pk) in booked_bhs:
-        messages.warning(
-            request,
-            "You’ve already booked this boarding house. Please wait for approval.",
-            extra_tags='booking'
-        )
-        return redirect('boardinghouse_detail', pk=pk)
-
-    if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.boardinghouse = bh
-            booking.status = 'pending'
-            booking.save()
-
-            # Save in session to prevent repeat booking
-            booked_bhs.append(str(pk))
-            request.session['booked_boardinghouses'] = booked_bhs
-
-            messages.success(
-                request,
-                "Boarding house booked successfully. Please wait for approval.",
-                extra_tags='booking'
-            )
-            return redirect('boardinghouse_detail', pk=pk)  # redirect back to the boarding house detail page
-        else:
-            messages.error(
-                request,
-                "Please correct the errors below.",
-                extra_tags='booking'
-            )
-    else:
-        form = BookingForm()
-
-    return render(request, 'booking_form.html', {
-        'form': form,
-        'bh': bh
-    })
 
 @login_required
 def approve_booking(request, booking_id):
@@ -497,3 +548,54 @@ def reject_booking(request, booking_id):
 
     messages.info(request, "Booking rejected and booker notified.")
     return redirect('owner_dashboard')
+
+def book_room(request, pk):
+    bh = BoardingHouse.objects.get(pk=pk)
+
+    # booking logic...
+    messages.success(request, "Booking request submitted successfully!")
+
+    return redirect("boardinghouse_detail", pk=bh.pk)  # ✅ redirect back to details
+
+@login_required
+def tenants_view(request, house_id):
+    boardinghouse = get_object_or_404(BoardingHouse, id=house_id)
+
+    # Ensure only the owner can access
+    if boardinghouse.owner != request.user:
+        messages.error(request, "You do not have permission to view this page.")
+        return redirect('owner_dashboard')
+
+    # Only bedspacers can access
+    if not boardinghouse.is_bedspacer:
+        messages.error(request, "Tenant management is only available for bedspacers.")
+        return redirect('owner_dashboard')
+
+    tenants = Booking.objects.filter(boardinghouse=boardinghouse, status='approved')
+
+    # Calculate remaining slots
+    remaining_slots = boardinghouse.capacity - tenants.count()
+
+    return render(request, 'tenants.html', {
+        'boardinghouse': boardinghouse,
+        'tenants': tenants,
+        'remaining_slots': remaining_slots
+    })
+
+def edit_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if booking.status != "pending":
+        messages.warning(request, "You can only edit pending bookings.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = BookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your booking has been updated successfully.")
+            return redirect("home")
+    else:
+        form = BookingForm(instance=booking)
+
+    return render(request, "edit_booking.html", {"form": form, "booking": booking})

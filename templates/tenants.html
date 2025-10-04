@@ -1,0 +1,75 @@
+{% extends 'ownerpage.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary">
+            <i class="fas fa-users me-2"></i> {{ boardinghouse.name }} – Tenants
+        </h2>
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Summary Badges -->
+    <div class="mb-4">
+        <span class="badge bg-primary p-2 me-2">
+            <i class="fas fa-home me-1"></i> Capacity: {{ boardinghouse.capacity }}
+        </span>
+        <span class="badge bg-success p-2 me-2">
+            <i class="fas fa-user-check me-1"></i> Current Bookings: {{ tenants|length }}
+        </span>
+        <span class="badge bg-warning text-dark p-2">
+            <i class="fas fa-bed me-1"></i> Remaining Slots: {{ remaining_slots }}
+        </span>
+    </div>
+
+    <!-- Tenant List -->
+    {% if tenants %}
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-semibold">
+                <i class="fas fa-list me-1 text-primary"></i> Tenant List
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Name</th>
+                            <th><i class="fas fa-phone me-1"></i> Contact</th>
+                            <th><i class="fas fa-map-marker-alt me-1"></i> Address</th>
+                            <th><i class="fas fa-calendar-alt me-1"></i> Booking Date</th>
+                            <th class="text-center"><i class="fas fa-cogs me-1"></i> Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tenant in tenants %}
+                        <tr>
+                            <td class="fw-semibold">{{ tenant.name }}</td>
+                            <td>{{ tenant.contact_number }}</td>
+                            <td class="text-truncate" style="max-width: 200px;">{{ tenant.address }}</td>
+                            <td>{{ tenant.created_at|date:"M j, Y" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'cancel_booking' tenant.id %}" 
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to cancel this booking?');">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info shadow-sm mt-3">
+            <i class="fas fa-info-circle me-2"></i> No tenants have booked this bedspacer yet.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Font Awesome -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+{% endblock %}

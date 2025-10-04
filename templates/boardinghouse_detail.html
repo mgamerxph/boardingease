@@ -1,184 +1,186 @@
 {% load static %}
 {% load custom_tags %}
+{% load form_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ bh.name }} - Details</title>
+    <title>{{ bh.name }} – Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/detail.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bhdetail.css' %}">
 </head>
 <body>
 
 <!-- 🔝 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="#">🏠 BoardingEase</a>
-        <div class="ms-auto">
-            <a class="btn btn-outline-dark" href="{% url 'home' %}">← Back to Home</a>
-        </div>
+      <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">🏠 BoardingEase</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+            <li class="nav-item">
+                <a class="nav-link text-primary" href="{% url 'home' %}">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+            </li>            
+        </ul>
+      </div>
     </div>
 </nav>
 
+<div style="height: 70px;"></div>
+
 {% if messages %}
-  <div class="container mt-3">
+<div class="container mt-3">
     {% for message in messages %}
-      {% if 'booking' in message.tags %}
-        <div class="alert alert-{{ message.tags|cut:'booking' }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-      {% endif %}
     {% endfor %}
-  </div>
+</div>
 {% endif %}
 
-<div class="container mt-5">
-    <div class="card detail-card shadow p-4">
-        <!-- 🏠 Title -->
-        <h2 class="text-center mb-4">{{ bh.name }}</h2>
+<div class="container mt-4">
+    <div class="row g-4">
+        
+        <!-- LEFT COLUMN (slimmer) -->
+        <div class="col-lg-5">
+            <!-- Title -->
+            <div class="text-center mb-3">
+                <h4 class="room-title">ROOM – {{ bh.name }}</h4>
+            </div>
 
-        <!-- 📷 Image -->
-        {% if bh.image %}
-        <div class="text-center mb-4">
-            <img src="{{ bh.image.url }}" class="img-fluid rounded" alt="Boarding House Image">
-        </div>
-        {% endif %}
+            <!-- 📷 Image with arrows -->
+            <div class="d-flex justify-content-center align-items-center mb-3">
+                <button class="btn btn-outline-secondary me-2"><i class="fa fa-arrow-left"></i></button>
+                {% if bh.image %}
+                    <img src="{{ bh.image.url }}" class="img-fluid rounded room-img" alt="Room Image">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" class="img-fluid rounded room-img" alt="No Image">
+                {% endif %}
+                <button class="btn btn-outline-secondary ms-2"><i class="fa fa-arrow-right"></i></button>
+            </div>
 
-        <!-- 📍 Address -->
-        <div class="mb-3">
-            <h5 class="text-muted">📍 Address:</h5>
-            <p>{{ bh.address }}</p>
-        </div>
+            <!-- 📝 Booking Form -->
+            <div class="card shadow booking-card p-4 mt-4">
+                <h5 class="booking-title text-center mb-4">
+                    <i class="fa fa-calendar-check me-2 text-primary"></i>
+                    Book <span class="text-gradient">{{ bh.name }}</span>
+                </h5>
 
-        <!-- 💰 Price -->
-        <div class="mb-3">
-            <h5 class="text-muted">💰 Price:</h5>
-            <p class="fs-5 fw-semibold text-success">₱{{ bh.price }} / Month</p>
-        </div>
+                <form method="post" action="{% url 'boardinghouse_detail' bh.pk %}" novalidate>
+                    {% csrf_token %}
 
-        <!-- 👤 Owner -->
-        <div class="mb-3">
-            <h5 class="text-muted">👤 Owner:</h5>
-            {% if bh.owner.profile %}
-                <p>
-                    {{ bh.owner.profile.first_name }} {{ bh.owner.profile.last_name }} <br>
-                    📞 {{ bh.owner.profile.contact_number }} <br>
-                    ✉️ {{ bh.owner.profile.email }}
-                </p>
-            {% else %}
-                <p>{{ bh.owner.username }}</p>
-            {% endif %}
-        </div>
-
-        <!-- 📖 Rules, 📦 Inclusions, 🏢 Amenities -->
-        <div class="row">
-            <!-- Rules -->
-            <div class="col-md-4 mb-4">
-                <div class="card p-3">
-                    <h5>📖 House Rules:</h5>
-                    <ul class="list-group list-group-flush">
-                        {% for rule in bh.house_rules %}
-                        <li class="list-group-item">
-                            {% if rule == 'curfew' %}
-                                Curfew: 
-                                {% if bh.curfew_start and bh.curfew_end %}
-                                    {{ bh.curfew_start|time:"h:i A" }} – {{ bh.curfew_end|time:"h:i A" }}
-                                {% else %}
-                                    No time specified
-                                {% endif %}
-                            {% elif rule == 'advance_payment' %}
-                                Advance Payment: {{ bh.advance_months }} Month(s)
-                                <span class="badge bg-warning text-dark">Required</span>
-                            {% elif rule == 'deposit' %}
-                                Deposit: {{ bh.deposit_months }} Month(s)
-                                <span class="badge bg-info text-dark">Required</span>
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+                            
+                            {% if field.name == "visit_date" %}
+                                <div class="input-group">
+                                    {{ field }}
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                </div>
                             {% else %}
-                                {{ rule|title }}
+                                {{ field }}
                             {% endif %}
-                        </li>
+                            
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="fa fa-exclamation-circle me-1"></i> {{ field.errors|striptags }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-center mt-4">
+                        <button type="submit" class="btn btn-darkcustom w-100">
+                            <i class="fa fa-paper-plane me-2"></i> Confirm Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN (wider) -->
+        <div class="col-lg-7">
+            
+            <!-- House Rules -->
+                <div class="section-card mb-3">
+                    <h6 class="section-title"><i class="fa fa-gavel me-2"></i> HOUSE RULES</h6>
+                    <ul class="list-unstyled check-list">
+                        {% for rule in bh.house_rules %}
+                            <li>
+                                <span class="icon-badge"><i class="fa fa-star"></i></span>
+                                {% if rule == 'curfew' %}
+                                    {% if bh.curfew_start and bh.curfew_end %}
+                                        Curfew: {{ bh.curfew_start|time:"h:i A" }} – {{ bh.curfew_end|time:"h:i A" }}
+                                    {% else %}
+                                        Curfew (time not specified)
+                                    {% endif %}
+                                {% elif rule == 'advance_payment' %}
+                                    {{ bh.advance_months }} Month(s) Advance
+                                {% elif rule == 'deposit' %}
+                                    {{ bh.deposit_months }} Month(s) Deposit
+                                {% elif rule == 'lady_only' %}
+                                    Lady Boarders Only
+                                {% elif rule == 'male_only' %}
+                                    Male Boarders Only
+                                {% elif rule == 'visitors_allowed' %}
+                                    Visitors Allowed
+                                {% elif rule == 'appliances' %}
+                                    Restrictions on Appliances
+                                {% else %}
+                                    {{ rule|title }}
+                                {% endif %}
+                            </li>
+                        {% empty %}
+                            <li class="text-muted">No house rules provided.</li>
                         {% endfor %}
                     </ul>
                 </div>
-                {% if bh.other_house_rules %}
-                    <p class="mt-2"><strong>Other:</strong> {{ bh.other_house_rules }}</p>
-                {% endif %}
-            </div>
 
             <!-- Inclusions -->
-            <div class="col-md-4 mb-4">
-                <h5 class="text-muted">📦 Inclusions:</h5>
-                {% if bh.get_inclusions_display %}
-                    <ul class="list-group">
-                        {% for inc in bh.get_inclusions_display|split:"," %}
-                            <li class="list-group-item">{{ inc }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No inclusions listed.</p>
-                {% endif %}
-                {% if bh.other_inclusions %}
-                    <p class="mt-2"><strong>Other:</strong> {{ bh.other_inclusions }}</p>
-                {% endif %}
+            <div class="section-card mb-3">
+                <h6 class="section-title"><i class="fa fa-box-open me-2"></i> INCLUSIONS</h6>
+                <ul class="list-unstyled check-list">
+                    {% for inc in bh.get_inclusions_display|split:"," %}
+                        <li><span class="icon-badge"><i class="fa fa-check"></i></span> {{ inc }}</li>
+                    {% empty %}
+                        <li class="text-muted">No inclusions listed.</li>
+                    {% endfor %}
+                </ul>
             </div>
 
             <!-- Amenities -->
-            <div class="col-md-4 mb-4">
-                <h5 class="text-muted">🏢 Amenities:</h5>
-                {% if bh.get_amenities_display %}
-                    <ul class="list-group">
-                        {% for amenity in bh.get_amenities_display|split:"," %}
-                            <li class="list-group-item">{{ amenity }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No amenities listed.</p>
-                {% endif %}
-                {% if bh.other_amenities %}
-                    <p class="mt-2"><strong>Other:</strong> {{ bh.other_amenities }}</p>
-                {% endif %}
+            <div class="section-card mb-3">
+                <h6 class="section-title"><i class="fa fa-couch me-2"></i> AMENITIES</h6>
+                <ul class="list-unstyled check-list">
+                    {% for amenity in bh.get_amenities_display|split:"," %}
+                        <li><span class="icon-badge"><i class="fa fa-check-circle"></i></span> {{ amenity }}</li>
+                    {% empty %}
+                        <li class="text-muted">No amenities available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Owner’s Info -->
+            <div class="section-card owner-info mb-3">
+                <h6 class="section-title"><i class="fa fa-user-circle me-2"></i> OWNER’S INFO</h6>
+                <p><span class="icon-badge"><i class="fa fa-user"></i></span> {{ bh.owner.profile.first_name }} {{ bh.owner.profile.last_name }}</p>
+                <p><span class="icon-badge"><i class="fa fa-phone"></i></span> {{ bh.owner.profile.contact_number }}</p>
+                <p><span class="icon-badge"><i class="fa fa-map-marker-alt"></i></span> {{ bh.owner.profile.address }}</p>
+                <p><span class="icon-badge"><i class="fa fa-envelope"></i></span> {{ bh.owner.profile.email }}</p>
             </div>
         </div>
-
-        <!-- 🛏️ Room Details -->
-        <div class="mt-4">
-            <h4 class="text-muted">🛏️ Room Details</h4>
-            <div class="card p-3">
-                <h5>{{ bh.name }}</h5>
-                <p>
-                    Type: 
-                    <span class="badge bg-secondary">{% if bh.is_bedspacer %}Bed Spacer{% else %}Regular{% endif %}</span><br>
-                    Capacity: {{ bh.capacity }}<br>
-                    Occupants: {{ bh.current_bookings }}<br>
-                    Available: <span class="fw-bold text-success">{{ bh.available_slots }}</span>
-                </p>
-                {% if bh.available_slots > 0 %}
-                    <a href="{% url 'book_boardinghouse' bh.pk %}" class="btn btn-dark w-100">Book This Room</a>
-                {% else %}
-                    <div class="alert alert-danger text-center p-1 mt-2 mb-0">Fully Occupied</div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- 📢 Booking Status -->
-        {% if booking_status == 'approved' %}
-            <div class="alert alert-success text-center fw-semibold mt-4">
-                ✅ Your booking has been approved.
-            </div>
-        {% elif booking_status == 'pending' %}
-            <div class="alert alert-warning text-center fw-semibold mt-4">
-                ⏳ Your booking is pending. Please wait for approval.
-            </div>
-        {% elif bh.is_booked %}
-            <div class="alert alert-danger text-center fw-semibold mt-4">
-                ❌ This boarding house is already <strong>fully booked</strong>.
-            </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- 📦 Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

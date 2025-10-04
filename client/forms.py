@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from .models import BoardingHouse, Profile, Booking
+from django.contrib.auth.forms import PasswordResetForm
 
 
 # -----------------------------
@@ -115,3 +116,8 @@ class BookingForm(forms.ModelForm):
             'contact_number': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
+
+class CustomPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'})
+    )

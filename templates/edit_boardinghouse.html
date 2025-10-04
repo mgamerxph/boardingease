@@ -1,19 +1,200 @@
-<!-- templates/edit_boardinghouse.html -->
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Edit Boarding House</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Owner – Edit Boarding House</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/addbh.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-<div class="container mt-5">
-    <h2>Edit Boarding House</h2>
+  <div class="container mt-4">
+
+    <!-- Header -->
+    <div class="page-header">
+      <i class="fa-solid fa-house-circle-check me-2 fs-4"></i>
+      <h2>BoardingEase – Edit Boarding House</h2>
+    </div>
+
     <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-success">Save</button>
-        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary">Cancel</a>
+      {% csrf_token %}
+      <div class="row">
+        <!-- LEFT COLUMN -->
+        <div class="col-md-6">
+
+          <!-- Room Info -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-bed me-2"></i> Room Information</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Name</label>
+                {{ form.name }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Address</label>
+                {{ form.address }}
+              </div>
+              <div class="form-check mb-2">
+                {{ form.is_bedspacer }}
+                <label class="form-check-label" for="{{ form.is_bedspacer.id_for_label }}">Bed Spacer</label>
+              </div>
+              <div class="capacity-field mb-3" style="display:none;">
+                {{ form.capacity.label_tag }} {{ form.capacity }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-tags me-2"></i> Price</div>
+            <div class="card-body">
+              {{ form.price }}
+              <small class="text-muted ms-2">Per Month</small>
+            </div>
+          </div>
+
+          <!-- Images -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-image me-2"></i> Photos</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Main Photo</label>
+                {{ form.image }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Additional Photo</label>
+                {{ form.additional_photo }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Section -->
+          <div class="custom-footer py-3 mt-4 border-top">
+            <div class="d-flex justify-content-start gap-3">
+              <button type="submit" class="btn btn-add btn-lg rounded-pill">
+                <i class="fa-solid fa-save me-2"></i> Save
+              </button>
+              <a href="{% url 'owner_dashboard' %}" class="btn btn-back btn-lg rounded-pill">
+                <i class="fa-solid fa-xmark me-2"></i> Cancel
+              </a>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-md-6">
+
+          <!-- House Rules -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-list-check me-2"></i> House Rules</div>
+            <div class="card-body">
+              <div class="row">
+                {% for checkbox in form.house_rules %}
+                <div class="col-md-6 mb-2">
+                  <div class="form-check">
+                    {{ checkbox.tag }}
+                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                  </div>
+
+                  {% if "curfew" in checkbox.choice_label|lower %}
+                  <div class="curfew-field ms-3 mt-2" style="display:none;">
+                    {{ form.curfew_start }} to {{ form.curfew_end }}
+                  </div>
+                  {% elif "advance" in checkbox.choice_label|lower %}
+                  <div class="advance-field ms-3 mt-2" style="display:none;">
+                    {{ form.advance_months }}
+                  </div>
+                  {% elif "deposit" in checkbox.choice_label|lower %}
+                  <div class="deposit-field ms-3 mt-2" style="display:none;">
+                    {{ form.deposit_months }}
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Inclusions -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-box me-2"></i> Inclusions</div>
+            <div class="card-body">
+              <div class="row">
+                {% for checkbox in form.inclusions %}
+                <div class="col-md-6 mb-2">
+                  <div class="form-check">
+                    {{ checkbox.tag }}
+                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {{ form.other_inclusions }}
+            </div>
+          </div>
+
+          <!-- Amenities -->
+          <div class="card card-custom">
+            <div class="card-header"><i class="fa-solid fa-couch me-2"></i> Amenities</div>
+            <div class="card-body">
+              <div class="row">
+                {% for checkbox in form.amenities %}
+                <div class="col-md-6 mb-2">
+                  <div class="form-check">
+                    {{ checkbox.tag }}
+                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {{ form.other_amenities }}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </form>
-</div>
+  </div>
+
+  <script>
+    function toggleFields() {
+      document.querySelectorAll('input[name^="house_rules"]').forEach(rule => {
+        const curfewWrapper = rule.closest(".col-md-6").querySelector(".curfew-field");
+        if (curfewWrapper) curfewWrapper.style.display = rule.checked ? "flex" : "none";
+
+        const advanceWrapper = rule.closest(".col-md-6").querySelector(".advance-field");
+        if (advanceWrapper) advanceWrapper.style.display = rule.checked ? "block" : "none";
+
+        const depositWrapper = rule.closest(".col-md-6").querySelector(".deposit-field");
+        if (depositWrapper) depositWrapper.style.display = rule.checked ? "block" : "none";
+      });
+    }
+
+    function toggleCapacity() {
+      const checkbox = document.querySelector('input[name$="is_bedspacer"]');
+      const capacityField = document.querySelector('.capacity-field');
+      if (checkbox && capacityField) {
+        capacityField.style.display = checkbox.checked ? "block" : "none";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('input[name^="house_rules"]').forEach(rule => {
+        rule.addEventListener('change', toggleFields);
+      });
+      const bedSpacer = document.querySelector('input[name$="is_bedspacer"]');
+      if (bedSpacer) bedSpacer.addEventListener('change', toggleCapacity);
+
+      toggleFields();
+      toggleCapacity();
+    });
+  </script>
 </body>
+
 </html>

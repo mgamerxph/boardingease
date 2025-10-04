@@ -61,7 +61,7 @@ class BoardingHouse(models.Model):
     HOUSE_RULE_CHOICES = [
         ("curfew", "Curfew"),
         ("advance_payment", "Advance Payment"),
-        ("deposit", "Deposit"),
+        ("deposit", "Month/s Deposit"),
         ("lady_only", "Lady Borders Only"),
         ("male_only", "Male Borders Only"),
         ("visitors_allowed", "Visitors Are Allowed"),
