@@ -93,9 +93,6 @@ def home(request):
 
     return render(request, 'home.html', context)
 
-
-    return render(request, 'home.html', context)
-
 def live_search(request):
     query = request.GET.get("q", "")
     bedspacer = request.GET.get("bedspacer", "")
