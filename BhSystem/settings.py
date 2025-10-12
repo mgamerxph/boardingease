@@ -90,27 +90,27 @@ WSGI_APPLICATION = 'BhSystem.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',   # still use mysql backend
-        'NAME': 'boardingease_db',           # create this DB in MariaDB first
-        'USER': 'root',
-        'PASSWORD': 'root1',                         # empty if you didn’t set one
-        'HOST': '127.0.0.1',                    # or 'localhost'
-        'PORT': '3307',                         # notice your MariaDB runs on 3307
-        'OPTIONS': {
-            'charset': 'utf8mb4',               # ensures full Unicode (emoji, etc.)
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',   # still use mysql backend
+#         'NAME': 'boardingease_db',           # create this DB in MariaDB first
+#         'USER': 'root',
+#         'PASSWORD': 'root1',                         # empty if you didn’t set one
+#         'HOST': '127.0.0.1',                    # or 'localhost'
+#         'PORT': '3307',                         # notice your MariaDB runs on 3307
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',               # ensures full Unicode (emoji, etc.)
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         },
+#     }
+# }
 
 
 # Password validation
